@@ -1,10 +1,20 @@
 defmodule Username do
-  def sanitize(username) do
-    # ä becomes ae
-    # ö becomes oe
-    # ü becomes ue
-    # ß becomes ss
+  defguard is_lowercase(code) when code >= ?a and code <= ?z
+  defguard is_underscore(code) when code == ?_
 
-    # Please implement the sanitize/1 function
+  def sanitize(username) do
+    username
+    |> Enum.flat_map(&substitute_german_chars/1)
+    |> Enum.filter(&(is_lowercase(&1) or is_underscore(&1)))
+  end
+
+  defp substitute_german_chars(code) do
+    case code do
+      ?ä -> 'ae'
+      ?ö -> 'oe'
+      ?ü -> 'ue'
+      ?ß -> 'ss'
+      _ -> [code]
+    end
   end
 end
