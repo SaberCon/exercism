@@ -26,7 +26,7 @@ defmodule Form do
   This is needed for form fields that don't offer a single input for the whole string,
   but instead require splitting the string into a predefined number of single-letter inputs.
   """
-  @spec letters(String.t()) :: [String.t()]
+  @spec letters(String.t()) :: list(String.t())
   def letters(word) do
     word
     |> String.upcase()
