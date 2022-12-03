@@ -1,21 +1,36 @@
 defmodule BoutiqueInventory do
   def sort_by_price(inventory) do
-    # Please implement the sort_by_price/1 function
+    inventory
+    |> Enum.sort_by(fn i -> i.price end)
   end
 
   def with_missing_price(inventory) do
-    # Please implement the with_missing_price/1 function
+    inventory
+    |> Enum.filter(fn i -> i.price == nil end)
   end
 
   def update_names(inventory, old_word, new_word) do
-    # Please implement the update_names/3 function
+    inventory
+    |> Enum.map(&update_name(&1, old_word, new_word))
+  end
+
+  defp update_name(item, old_word, new_word) do
+    item
+    |> Map.update!(:name, &String.replace(&1, old_word, new_word))
   end
 
   def increase_quantity(item, count) do
-    # Please implement the increase_quantity/2 function
+    item
+    |> Map.update!(:quantity_by_size, &increase_quantity_by_size(&1, count))
+  end
+
+  defp increase_quantity_by_size(quantity_by_size, count) do
+    quantity_by_size
+    |> Map.new(fn {size, q} -> {size, q + count} end)
   end
 
   def total_quantity(item) do
-    # Please implement the total_quantity/1 function
+    item.quantity_by_size
+    |> Enum.reduce(0, fn {_, q}, acc -> acc + q end)
   end
 end
