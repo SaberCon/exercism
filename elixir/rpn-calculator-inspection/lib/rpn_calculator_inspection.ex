@@ -1,17 +1,32 @@
 defmodule RPNCalculatorInspection do
   def start_reliability_check(calculator, input) do
-    # Please implement the start_reliability_check/2 function
+    %{input: input, pid: spawn_link(fn -> calculator.(input) end)}
   end
 
   def await_reliability_check_result(%{pid: pid, input: input}, results) do
-    # Please implement the await_reliability_check_result/2 function
+    result =
+      receive do
+        {:EXIT, ^pid, :normal} -> :ok
+        {:EXIT, ^pid, _} -> :error
+      after
+        100 -> :timeout
+      end
+
+    Map.put(results, input, result)
   end
 
   def reliability_check(calculator, inputs) do
-    # Please implement the reliability_check/2 function
+    original_trap_exit = Process.flag(:trap_exit, true)
+
+    inputs
+    |> Enum.map(&start_reliability_check(calculator, &1))
+    |> Enum.reduce(%{}, fn v, acc -> await_reliability_check_result(v, acc) end)
+    |> tap(fn _ -> Process.flag(:trap_exit, original_trap_exit) end)
   end
 
   def correctness_check(calculator, inputs) do
-    # Please implement the correctness_check/2 function
+    inputs
+    |> Enum.map(&Task.async(fn -> calculator.(&1) end))
+    |> Enum.map(&Task.await(&1, 100))
   end
 end
