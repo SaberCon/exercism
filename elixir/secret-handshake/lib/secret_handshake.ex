@@ -15,5 +15,21 @@ defmodule SecretHandshake do
   """
   @spec commands(code :: integer) :: list(String.t())
   def commands(code) do
+    Integer.digits(code, 2)
+    |> Enum.reverse()
+    |> Stream.take(5)
+    |> Stream.with_index()
+    |> Stream.filter(fn {d, _} -> d == 1 end)
+    |> Enum.reduce([], fn {_, i}, acc -> action(i, acc) end)
+  end
+
+  defp action(index, acc) do
+    case index do
+      0 -> acc ++ ["wink"]
+      1 -> acc ++ ["double blink"]
+      2 -> acc ++ ["close your eyes"]
+      3 -> acc ++ ["jump"]
+      4 -> Enum.reverse(acc)
+    end
   end
 end
