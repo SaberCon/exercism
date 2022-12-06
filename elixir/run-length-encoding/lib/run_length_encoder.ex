@@ -8,9 +8,15 @@ defmodule RunLengthEncoder do
   """
   @spec encode(String.t()) :: String.t()
   def encode(string) do
+    Regex.replace(~r/(.)\1*/, string, fn
+      char, char -> char
+      chars, char -> "#{String.length(chars)}#{char}"
+    end)
   end
 
-  @spec decode(String.t()) :: String.t()
   def decode(string) do
+    Regex.replace(~r/(\d+)(.)/, string, fn _, len, char ->
+      String.duplicate(char, String.to_integer(len))
+    end)
   end
 end
