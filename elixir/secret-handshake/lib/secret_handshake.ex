@@ -1,4 +1,6 @@
 defmodule SecretHandshake do
+  @actions [0b00001, 0b00010, 0b00100, 0b01000, 0b10000]
+
   @doc """
   Determine the actions of a secret handshake based on the binary
   representation of the given `code`.
@@ -15,21 +17,14 @@ defmodule SecretHandshake do
   """
   @spec commands(code :: integer) :: list(String.t())
   def commands(code) do
-    Integer.digits(code, 2)
-    |> Enum.reverse()
-    |> Stream.take(5)
-    |> Stream.with_index()
-    |> Stream.filter(fn {d, _} -> d == 1 end)
-    |> Enum.reduce([], fn {_, i}, acc -> action(i, acc) end)
+    @actions
+    |> Enum.filter(fn action -> Bitwise.band(action, code) == action end)
+    |> Enum.reduce([], &execute/2)
   end
 
-  defp action(index, acc) do
-    case index do
-      0 -> acc ++ ["wink"]
-      1 -> acc ++ ["double blink"]
-      2 -> acc ++ ["close your eyes"]
-      3 -> acc ++ ["jump"]
-      4 -> Enum.reverse(acc)
-    end
-  end
+  defp execute(0b00001, acc), do: acc ++ ["wink"]
+  defp execute(0b00010, acc), do: acc ++ ["double blink"]
+  defp execute(0b00100, acc), do: acc ++ ["close your eyes"]
+  defp execute(0b01000, acc), do: acc ++ ["jump"]
+  defp execute(0b10000, acc), do: Enum.reverse(acc)
 end
