@@ -5,6 +5,10 @@ defmodule StringSeries do
   return an empty list.
   """
   @spec slices(s :: String.t(), size :: integer) :: list(String.t())
-  def slices(_s, _size) do
+  def slices(_, size) when size <= 0, do: []
+
+  def slices(s, size) do
+    0..(String.length(s) - size)//1
+    |> Enum.map(&String.slice(s, &1, size))
   end
 end
