@@ -31,6 +31,9 @@ defmodule SimpleCipher do
   as are necessary.
   """
   def encode(plaintext, key) do
+    zip_text_key(plaintext, key)
+    |> Enum.map(fn {t, k} -> rotate(t, k - ?a) end)
+    |> to_string()
   end
 
   @doc """
@@ -44,11 +47,27 @@ defmodule SimpleCipher do
   etc..., depending on how much you shift the alphabet.
   """
   def decode(ciphertext, key) do
+    zip_text_key(ciphertext, key)
+    |> Enum.map(fn {t, k} -> rotate(t, ?a - k) end)
+    |> to_string()
   end
 
   @doc """
   Generate a random key of a given length. It should contain lowercase letters only.
   """
   def generate_key(length) do
+    1..length
+    |> Enum.map(fn _ -> Enum.random(?a..?z) end)
+    |> to_string()
+  end
+
+  defp zip_text_key(text, key) do
+    text_chars = text |> to_charlist()
+    key_chars = key |> String.pad_trailing(String.length(text), key) |> to_charlist()
+    Enum.zip(text_chars, key_chars)
+  end
+
+  defp rotate(letter, distance) do
+    ?a + Integer.mod(letter + distance - ?a, 26)
   end
 end
