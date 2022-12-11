@@ -36,6 +36,7 @@ defmodule DiffieHellman do
   """
   @spec generate_private_key(prime_p :: integer) :: integer
   def generate_private_key(prime_p) do
+    1..(prime_p - 1) |> Enum.random()
   end
 
   @doc """
@@ -47,6 +48,8 @@ defmodule DiffieHellman do
   @spec generate_public_key(prime_p :: integer, prime_g :: integer, private_key :: integer) ::
           integer
   def generate_public_key(prime_p, prime_g, private_key) do
+    :crypto.mod_pow(prime_g, private_key, prime_p)
+    |> :binary.decode_unsigned()
   end
 
   @doc """
@@ -61,5 +64,6 @@ defmodule DiffieHellman do
           private_key_a :: integer
         ) :: integer
   def generate_shared_secret(prime_p, public_key_b, private_key_a) do
+    generate_public_key(prime_p, public_key_b, private_key_a)
   end
 end
