@@ -8,6 +8,9 @@ defmodule Squares do
   """
   @spec sum_of_squares(pos_integer) :: pos_integer
   def sum_of_squares(number) do
+    1..number
+    |> Enum.map(&(&1 ** 2))
+    |> Enum.sum()
   end
 
   @doc """
@@ -15,6 +18,9 @@ defmodule Squares do
   """
   @spec square_of_sum(pos_integer) :: pos_integer
   def square_of_sum(number) do
+    1..number
+    |> Enum.sum()
+    |> then(&(&1 ** 2))
   end
 
   @doc """
@@ -22,5 +28,6 @@ defmodule Squares do
   """
   @spec difference(pos_integer) :: pos_integer
   def difference(number) do
+    square_of_sum(number) - sum_of_squares(number)
   end
 end
