@@ -13,6 +13,8 @@ defmodule BankAccount do
   """
   @spec open_bank() :: account
   def open_bank() do
+    {:ok, pid} = Agent.start(fn -> 0 end)
+    pid
   end
 
   @doc """
@@ -20,6 +22,7 @@ defmodule BankAccount do
   """
   @spec close_bank(account) :: none
   def close_bank(account) do
+    Agent.stop(account)
   end
 
   @doc """
@@ -27,6 +30,11 @@ defmodule BankAccount do
   """
   @spec balance(account) :: integer
   def balance(account) do
+    if Process.alive?(account) do
+      Agent.get(account, & &1)
+    else
+      {:error, :account_closed}
+    end
   end
 
   @doc """
@@ -34,5 +42,10 @@ defmodule BankAccount do
   """
   @spec update(account, integer) :: any
   def update(account, amount) do
+    if Process.alive?(account) do
+      Agent.update(account, &(&1 + amount))
+    else
+      {:error, :account_closed}
+    end
   end
 end
