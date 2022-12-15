@@ -1,4 +1,8 @@
 defmodule ScaleGenerator do
+  @chromatic_scale ~w(A A# B C C# D D# E F F# G G#)
+  @flat_chromatic_scale ~w(A Bb B C Db D Eb E F Gb G Ab)
+  @flat_chromatic_scale_tonics ~w(F Bb Eb Ab Db Gb d g c f bb eb)
+
   @doc """
   Find the note for a given interval (`step`) in a `scale` after the `tonic`.
 
@@ -14,7 +18,15 @@ defmodule ScaleGenerator do
   "A": F
   """
   @spec step(scale :: list(String.t()), tonic :: String.t(), step :: String.t()) :: String.t()
-  def step(scale, tonic, step) do
+  def step(scale, tonic, "m"), do: do_step(scale, tonic, 1)
+  def step(scale, tonic, "M"), do: do_step(scale, tonic, 2)
+  def step(scale, tonic, "A"), do: do_step(scale, tonic, 3)
+
+  defp do_step(scale, tonic, semitones) do
+    Enum.find_index(scale, &(&1 == tonic))
+    |> Kernel.+(semitones)
+    |> rem(length(scale))
+    |> then(&Enum.at(scale, &1))
   end
 
   @doc """
@@ -33,6 +45,10 @@ defmodule ScaleGenerator do
   """
   @spec chromatic_scale(tonic :: String.t()) :: list(String.t())
   def chromatic_scale(tonic \\ "C") do
+    tonic = String.capitalize(tonic)
+    first = Enum.drop_while(@chromatic_scale, &(&1 != tonic))
+    second = Enum.take_while(@chromatic_scale, &(&1 != tonic))
+    first ++ second ++ [tonic]
   end
 
   @doc """
@@ -49,6 +65,10 @@ defmodule ScaleGenerator do
   """
   @spec flat_chromatic_scale(tonic :: String.t()) :: list(String.t())
   def flat_chromatic_scale(tonic \\ "C") do
+    tonic = String.capitalize(tonic)
+    first = Enum.drop_while(@flat_chromatic_scale, &(&1 != tonic))
+    second = Enum.take_while(@flat_chromatic_scale, &(&1 != tonic))
+    first ++ second ++ [tonic]
   end
 
   @doc """
@@ -62,8 +82,10 @@ defmodule ScaleGenerator do
   For all others, use the regular chromatic scale.
   """
   @spec find_chromatic_scale(tonic :: String.t()) :: list(String.t())
-  def find_chromatic_scale(tonic) do
-  end
+  def find_chromatic_scale(tonic) when tonic in @flat_chromatic_scale_tonics,
+    do: flat_chromatic_scale(tonic)
+
+  def find_chromatic_scale(tonic), do: chromatic_scale(tonic)
 
   @doc """
   The `pattern` string will let you know how many steps to make for the next
@@ -78,5 +100,11 @@ defmodule ScaleGenerator do
   """
   @spec scale(tonic :: String.t(), pattern :: String.t()) :: list(String.t())
   def scale(tonic, pattern) do
+    scale = find_chromatic_scale(tonic)
+
+    pattern
+    |> String.graphemes()
+    |> Enum.scan(String.capitalize(tonic), fn step, acc -> step(scale, acc, step) end)
+    |> List.insert_at(0, String.capitalize(tonic))
   end
 end
