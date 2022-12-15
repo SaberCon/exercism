@@ -21,30 +21,16 @@ defmodule Transpose do
   def transpose(input) do
     input
     |> String.split("\n")
-    |> pad_short_rows()
-    |> rows_to_columns()
-    |> Enum.map_join("\n", &normalize_column/1)
-  end
-
-  defp pad_short_rows(rows) do
-    max_length =
-      rows
-      |> Enum.map(&String.length/1)
-      |> Enum.max()
-
-    rows
-    |> Enum.map(&String.pad_trailing(&1, max_length, "🥵"))
-  end
-
-  defp normalize_column(rows) do
-    rows
-    |> String.trim_trailing("🥵")
-    |> String.replace("🥵", " ")
-  end
-
-  defp rows_to_columns(rows) do
-    rows
     |> Enum.map(&String.graphemes/1)
-    |> Enum.zip_with(&Enum.join/1)
+    |> List.foldr([], &add_to_columns/2)
+    |> Enum.join("\n")
+  end
+
+  defp add_to_columns(chars, []), do: chars
+
+  defp add_to_columns([], columns), do: add_to_columns([" "], columns)
+
+  defp add_to_columns([char | rest_chars], [column | rest_columns]) do
+    [char <> column | add_to_columns(rest_chars, rest_columns)]
   end
 end
