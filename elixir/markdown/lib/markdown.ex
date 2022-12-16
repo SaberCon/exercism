@@ -11,69 +11,34 @@ defmodule Markdown do
       "<h1>Header!</h1><ul><li><strong>Bold Item</strong></li><li><em>Italic Item</em></li></ul>"
   """
   @spec parse(String.t()) :: String.t()
-  def parse(m) do
-    patch(Enum.join(Enum.map(String.split(m, "\n"), fn t -> process(t) end)))
+  def parse(text) do
+    text
+    |> String.split("\n")
+    |> Enum.map_join(&parse_line/1)
+    |> parse_style_tags()
+    |> wrap_ul()
   end
 
-  defp process(t) do
-    if (String.starts_with?(t, "#") && !String.starts_with?(t, "#######")) ||
-         String.starts_with?(t, "*") do
-      if String.starts_with?(t, "#") do
-        enclose_with_header_tag(parse_header_md_level(t))
-      else
-        parse_list_md_level(t)
-      end
-    else
-      enclose_with_paragraph_tag(String.split(t))
-    end
+  defp parse_line("#" <> line), do: parse_header(line, 1)
+  defp parse_line("* " <> line), do: "<li>#{line}</li>"
+  defp parse_line(line), do: to_paragraph(line)
+
+  defp parse_header(line, 7), do: to_paragraph(String.duplicate("#", 7) <> line)
+  defp parse_header(" " <> t, level), do: "<h#{level}>#{t}</h#{level}>"
+  defp parse_header("#" <> t, level), do: parse_header(t, level + 1)
+  defp parse_header(line, level), do: to_paragraph(String.duplicate("#", level) <> line)
+
+  defp to_paragraph(text), do: "<p>#{text}</p>"
+
+  defp parse_style_tags(text) do
+    text
+    |> parse_bold_tags()
+    |> parse_emphasized_tags()
   end
 
-  defp parse_header_md_level(hwt) do
-    [h | t] = String.split(hwt)
-    {to_string(String.length(h)), Enum.join(t, " ")}
-  end
+  defp parse_bold_tags(text), do: String.replace(text, ~r/__([^_]+?)__/, "<strong>\\1</strong>")
 
-  defp parse_list_md_level(l) do
-    t = String.split(String.trim_leading(l, "* "))
-    "<li>" <> join_words_with_tags(t) <> "</li>"
-  end
+  defp parse_emphasized_tags(text), do: String.replace(text, ~r/_([^_]+?)_/, "<em>\\1</em>")
 
-  defp enclose_with_header_tag({hl, htl}) do
-    "<h" <> hl <> ">" <> htl <> "</h" <> hl <> ">"
-  end
-
-  defp enclose_with_paragraph_tag(t) do
-    "<p>#{join_words_with_tags(t)}</p>"
-  end
-
-  defp join_words_with_tags(t) do
-    Enum.join(Enum.map(t, fn w -> replace_md_with_tag(w) end), " ")
-  end
-
-  defp replace_md_with_tag(w) do
-    replace_suffix_md(replace_prefix_md(w))
-  end
-
-  defp replace_prefix_md(w) do
-    cond do
-      w =~ ~r/^#{"__"}{1}/ -> String.replace(w, ~r/^#{"__"}{1}/, "<strong>", global: false)
-      w =~ ~r/^[#{"_"}{1}][^#{"_"}+]/ -> String.replace(w, ~r/_/, "<em>", global: false)
-      true -> w
-    end
-  end
-
-  defp replace_suffix_md(w) do
-    cond do
-      w =~ ~r/#{"__"}{1}$/ -> String.replace(w, ~r/#{"__"}{1}$/, "</strong>")
-      w =~ ~r/[^#{"_"}{1}]/ -> String.replace(w, ~r/_/, "</em>")
-      true -> w
-    end
-  end
-
-  defp patch(l) do
-    String.replace(l, "<li>", "<ul>" <> "<li>", global: false)
-    |> String.reverse()
-    |> String.replace(String.reverse("</li>"), String.reverse("</li></ul>"), global: false)
-    |> String.reverse()
-  end
+  defp wrap_ul(text), do: String.replace(text, ~r/<li>.*<\/li>/, "<ul>\\0</ul>")
 end
