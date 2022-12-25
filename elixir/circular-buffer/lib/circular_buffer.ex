@@ -8,6 +8,7 @@ defmodule CircularBuffer do
   """
   @spec new(capacity :: integer) :: {:ok, pid}
   def new(capacity) do
+    Agent.start(fn -> {capacity, []} end)
   end
 
   @doc """
@@ -15,6 +16,11 @@ defmodule CircularBuffer do
   """
   @spec read(buffer :: pid) :: {:ok, any} | {:error, atom}
   def read(buffer) do
+    buffer
+    |> Agent.get_and_update(fn
+      {capacity, []} -> {{:error, :empty}, {capacity, []}}
+      {capacity, [head | tail]} -> {{:ok, head}, {capacity, tail}}
+    end)
   end
 
   @doc """
@@ -22,6 +28,14 @@ defmodule CircularBuffer do
   """
   @spec write(buffer :: pid, item :: any) :: :ok | {:error, atom}
   def write(buffer, item) do
+    buffer
+    |> Agent.get_and_update(fn
+      {capacity, entries} when capacity == length(entries) ->
+        {{:error, :full}, {capacity, entries}}
+
+      {capacity, entries} ->
+        {:ok, {capacity, entries ++ [item]}}
+    end)
   end
 
   @doc """
@@ -29,6 +43,14 @@ defmodule CircularBuffer do
   """
   @spec overwrite(buffer :: pid, item :: any) :: :ok
   def overwrite(buffer, item) do
+    buffer
+    |> Agent.update(fn
+      {capacity, entries} when capacity == length(entries) ->
+        {capacity, tl(entries) ++ [item]}
+
+      {capacity, entries} ->
+        {capacity, entries ++ [item]}
+    end)
   end
 
   @doc """
@@ -36,5 +58,6 @@ defmodule CircularBuffer do
   """
   @spec clear(buffer :: pid) :: :ok
   def clear(buffer) do
+    buffer |> Agent.update(fn {capacity, _} -> {capacity, []} end)
   end
 end
